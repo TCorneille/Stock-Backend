@@ -25,7 +25,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
-  "scripts": {
-    "dev": "ts-node --files src/server.ts"
-  }
+ "scripts": {
+  "build": "tsc",
+  "start": "node dist/server.js",           
+  "dev": "ts-node --files src/server.ts"  
+}
 }
