@@ -25,6 +25,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
+  "main": "dist/server.js",
  "scripts": {
   "build": "tsc",
   "start": "node dist/server.js",           
