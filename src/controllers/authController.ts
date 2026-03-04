@@ -1,85 +1,72 @@
+// src/controllers/authController.ts
 import { Request, Response, NextFunction } from "express";
-import bcrypt from "bcrypt";
 import { User } from "../models/User";
 import { generateToken } from "../utils/jwt";
 
 export class AuthController {
-
-  static async register(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  //
+  // REGISTER
+  //
+  static async register(req: Request, res: Response, next: NextFunction) {
     try {
+      const { email, password, role } = req.body;
 
-      const { email, password } = req.body;
-
+      // Check if user exists
       const existing = await User.findOne({ email });
+      if (existing) {
+        return res.status(400).json({ message: "User already exists" });
+      }
 
-      if (existing)
-        return res.status(400).json({
-          message: "User already exists"
-        });
-
-      const passwordHash =
-        await bcrypt.hash(password, 10);
-
+      // Create user (password hashing handled by User model)
       const user = await User.create({
         email,
-        passwordHash
+        password,
+        role, // optional: will default to 'user' if not provided
       });
+      console.log("Registered user:", user);
 
-      const token =
-        generateToken(user._id.toString());
+      // Generate JWT with userId and role
+      const token = generateToken(user._id.toString(), user.role);
 
       res.status(201).json({
         userId: user._id,
-        token
+        role: user.role,
+        token,
       });
-
     } catch (error) {
       next(error);
     }
   }
 
-  static async login(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  //
+  // LOGIN
+  //
+  static async login(req: Request, res: Response, next: NextFunction) {
     try {
-
       const { email, password } = req.body;
 
-      const user =
-        await User.findOne({ email });
+      // Find user and explicitly select password
+      const user = await User.findOne({ email }).select("+password");
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-      if (!user)
-        return res.status(404).json({
-          message: "User not found"
-        });
+      // Compare password
+      const isValid = await user.comparePassword(password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
 
-      const valid =
-        await bcrypt.compare(
-          password,
-          user.passwordHash
-        );
-
-      if (!valid)
-        return res.status(401).json({
-          message: "Invalid credentials"
-        });
-
-      const token =
-        generateToken(user._id.toString());
+      // Generate JWT with userId and role
+      const token = generateToken(user._id.toString(), user.role);
 
       res.json({
-        token
+        userId: user._id,
+        role: user.role,
+        token,
       });
-
     } catch (error) {
       next(error);
     }
   }
-
 }

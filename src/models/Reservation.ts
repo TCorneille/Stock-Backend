@@ -1,22 +1,33 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
-const ReservationSchema = new mongoose.Schema({
+export type ReservationStatus = "ACTIVE" | "COMPLETED" | "EXPIRED";
 
-  userId: mongoose.Types.ObjectId,
+export interface IReservation extends Document {
+  userId: mongoose.Types.ObjectId;
+  productId: mongoose.Types.ObjectId;
+  quantity: number;
+  status: ReservationStatus;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-  productId: mongoose.Types.ObjectId,
-
-  quantity: Number,
-
-  status: {
-    type: String,
-    enum: ["ACTIVE", "COMPLETED", "EXPIRED"],
-    default: "ACTIVE"
+const ReservationSchema = new Schema<IReservation>(
+  {
+    userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    productId: { type: Schema.Types.ObjectId, required: true, ref: "Product" },
+    quantity: { type: Number, required: true },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "COMPLETED", "EXPIRED"],
+      default: "ACTIVE",
+    },
+    expiresAt: { type: Date, required: true },
   },
+  { timestamps: true }
+);
 
-  expiresAt: Date
-
-}, { timestamps: true });
-
-export const Reservation =
-  mongoose.model("Reservation", ReservationSchema);
+export const Reservation = mongoose.model<IReservation>(
+  "Reservation",
+  ReservationSchema
+);

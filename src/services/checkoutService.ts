@@ -1,54 +1,37 @@
+// src/services/checkoutService.ts
 import { Order } from "../models/Order";
 import { Reservation } from "../models/Reservation";
 import { Product } from "../models/Product";
 
-export async function checkout(
-  reservationId: string,
-  userId: string
-) {
+export async function checkout(reservationId: string, userId: string) {
+  // Find reservation
+  const reservation = await Reservation.findById(reservationId);
+  if (!reservation) throw new Error("Reservation not found");
+  if (reservation.userId.toString() !== userId) {
+    throw new Error("Unauthorized checkout");
+  }
 
-  const session =
-    await mongoose.startSession();
+  // Find product
+  const product = await Product.findById(reservation.productId);
+  if (!product) throw new Error("Product not found");
 
-  session.startTransaction();
+  // Deduct stock
+  if (product.stock < reservation.quantity) {
+    throw new Error("Not enough stock for checkout");
+  }
+  product.stock -= reservation.quantity;
+  product.reservedStock -= reservation.quantity;
+  await product.save();
 
-  const reservation =
-    await Reservation.findById(reservationId)
-      .session(session);
+  // Create order
+  const order = await Order.create({
+    userId,
+    reservationId: reservation._id,
+    quantity: reservation.quantity,
+  });
 
-  if (!reservation)
-    throw new Error("Not found");
-
-  if (reservation.status !== "ACTIVE")
-    throw new Error("Invalid");
-
-  await Product.updateOne(
-    { _id: reservation.productId },
-    {
-      $inc: {
-        stock: -reservation.quantity,
-        reservedStock: -reservation.quantity
-      }
-    },
-    { session }
-  );
-
-  const order =
-    await Order.create([{
-
-      userId,
-      productId: reservation.productId,
-      reservationId,
-      quantity: reservation.quantity
-
-    }], { session });
-
-  reservation.status = "COMPLETED";
-
-  await reservation.save({ session });
-
-  await session.commitTransaction();
+  // Delete reservation after checkout (optional)
+  await Reservation.findByIdAndDelete(reservation._id);
 
   return order;
-
 }

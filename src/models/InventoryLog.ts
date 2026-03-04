@@ -1,12 +1,27 @@
-const InventoryLogSchema = new mongoose.Schema({
+import mongoose from "mongoose";
 
-  productId: mongoose.Types.ObjectId,
+const InventoryLogSchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "Product",
+    },
 
-  change: Number,
+    change: {
+      type: Number,
+      required: true,
+    },
 
-  reason: String
+    reason: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
 
-}, { timestamps: true });
-
-export const InventoryLog =
-  mongoose.model("InventoryLog", InventoryLogSchema);
+export const InventoryLog = mongoose.model(
+  "InventoryLog",
+  InventoryLogSchema
+);

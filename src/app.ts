@@ -9,7 +9,7 @@ import checkoutRoutes from "./routes/checkoutRoutes";
 import productRoutes from "./routes/productRoutes";
 
 import { logger } from "./config/logger";
-import { errorMiddleware } from "./middleware/errorMiddleware";
+import { errorMiddleware } from "./middlewares/errorMiddleware";
 import { getMetrics } from "./utils/metrics";
 
 const app: Application = express();
